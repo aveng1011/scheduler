@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>When Can't Meet - Group Availability</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .name-input-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 6px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"] {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            min-width: 200px;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .current-user {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e8f5e9;
+            border-radius: 4px;
+            color: #2e7d32;
+        }
+
+        .availability-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .availability-count {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-box {
+            width: 30px;
+            height: 20px;
+            border: 1px solid #999;
+            border-radius: 3px;
+        }
+
+        .calendar-container {
+            overflow-x: auto;
+        }
+
+        .calendar {
+            display: inline-grid;
+            grid-template-columns: 80px repeat(7, 90px);
+            gap: 1px;
+            background: #ddd;
+            border: 1px solid #ddd;
+            min-width: 100%;
+        }
+
+        .calendar-header {
+            background: #f0f0f0;
+            padding: 12px;
+            text-align: center;
+            font-weight: 600;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .time-label {
+            background: #f0f0f0;
+            padding: 12px 8px;
+            text-align: right;
+            font-size: 13px;
+            color: #666;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .time-slot {
+            background: white;
+            padding: 12px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            transition: all 0.15s;
+            position: relative;
+            user-select: none;
+        }
+
+        .time-slot:hover {
+            background: #f5f5f5;
+        }
+
+        .time-slot.unavailable-self {
+            background: #ffebee;
+        }
+
+        .time-slot.unavailable-others {
+            background: #e3f2fd;
+        }
+
+        .time-slot.unavailable-both {
+            background: #f3e5f5;
+        }
+
+        .slot-count {
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: 11px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .participants-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+        }
+
+        .participants-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .participant-badge {
+            padding: 6px 12px;
+            background: #e3f2fd;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #1976d2;
+        }
+
+        .instructions {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .instructions h3 {
+            margin-bottom: 8px;
+            color: #856404;
+        }
+
+        .instructions p {
+            color: #856404;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const HOURS = ['9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM', '8:00 PM', '9:00 PM'];
+
+        function App() {
+            const [currentUser, setCurrentUser] = useState('');
+            const [nameInput, setNameInput] = useState('');
+            const [unavailability, setUnavailability] = useState({});
+            const [isDragging, setIsDragging] = useState(false);
+            const [dragMode, setDragMode] = useState(null);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                loadData();
+            }, []);
+
+            const loadData = async () => {
+                try {
+                    const result = await window.storage.get('availability-data', true);
+                    if (result && result.value) {
+                        const data = JSON.parse(result.value);
+                        setUnavailability(data);
+                    }
+                } catch (error) {
+                    console.log('No existing data found, starting fresh');
+                }
+                setLoading(false);
+            };
+
+            const saveData = async (data) => {
+                try {
+                    await window.storage.set('availability-data', JSON.stringify(data), true);
+                } catch (error) {
+                    console.error('Failed to save data:', error);
+                }
+            };
+
+            const handleSignIn = () => {
+                if (nameInput.trim()) {
+                    setCurrentUser(nameInput.trim());
+                    setNameInput('');
+                }
+            };
+
+            const getSlotKey = (day, hour) => `${day}-${hour}`;
+
+            const toggleSlot = (day, hour) => {
+                if (!currentUser) return;
+
+                const key = getSlotKey(day, hour);
+                const newUnavailability = { ...unavailability };
+
+                if (!newUnavailability[key]) {
+                    newUnavailability[key] = [];
+                }
+
+                const userIndex = newUnavailability[key].indexOf(currentUser);
+                if (userIndex > -1) {
+                    newUnavailability[key].splice(userIndex, 1);
+                    if (newUnavailability[key].length === 0) {
+                        delete newUnavailability[key];
+                    }
+                    setDragMode('removing');
+                } else {
+                    newUnavailability[key].push(currentUser);
+                    setDragMode('adding');
+                }
+
+                setUnavailability(newUnavailability);
+                saveData(newUnavailability);
+            };
+
+            const handleMouseDown = (day, hour) => {
+                setIsDragging(true);
+                toggleSlot(day, hour);
+            };
+
+            const handleMouseEnter = (day, hour) => {
+                if (!isDragging || !currentUser) return;
+
+                const key = getSlotKey(day, hour);
+                const newUnavailability = { ...unavailability };
+
+                if (!newUnavailability[key]) {
+                    newUnavailability[key] = [];
+                }
+
+                const userIndex = newUnavailability[key].indexOf(currentUser);
+
+                if (dragMode === 'adding' && userIndex === -1) {
+                    newUnavailability[key].push(currentUser);
+                    setUnavailability(newUnavailability);
+                    saveData(newUnavailability);
+                } else if (dragMode === 'removing' && userIndex > -1) {
+                    newUnavailability[key].splice(userIndex, 1);
+                    if (newUnavailability[key].length === 0) {
+                        delete newUnavailability[key];
+                    }
+                    setUnavailability(newUnavailability);
+                    saveData(newUnavailability);
+                }
+            };
+
+            const handleMouseUp = () => {
+                setIsDragging(false);
+                setDragMode(null);
+            };
+
+            useEffect(() => {
+                document.addEventListener('mouseup', handleMouseUp);
+                return () => document.removeEventListener('mouseup', handleMouseUp);
+            }, []);
+
+            const getSlotClass = (day, hour) => {
+                const key = getSlotKey(day, hour);
+                const users = unavailability[key] || [];
+                
+                const isSelfUnavailable = users.includes(currentUser);
+                const hasOthers = users.some(u => u !== currentUser);
+
+                if (isSelfUnavailable && hasOthers) return 'time-slot unavailable-both';
+                if (isSelfUnavailable) return 'time-slot unavailable-self';
+                if (hasOthers) return 'time-slot unavailable-others';
+                return 'time-slot';
+            };
+
+            const getSlotCount = (day, hour) => {
+                const key = getSlotKey(day, hour);
+                const users = unavailability[key] || [];
+                return users.length;
+            };
+
+            const getAllParticipants = () => {
+                const participants = new Set();
+                Object.values(unavailability).forEach(users => {
+                    users.forEach(user => participants.add(user));
+                });
+                return Array.from(participants).sort();
+            };
+
+            const getTotalAvailableSlots = () => {
+                return DAYS.length * HOURS.length;
+            };
+
+            const getAvailableSlots = () => {
+                let available = 0;
+                DAYS.forEach(day => {
+                    HOURS.forEach(hour => {
+                        const key = getSlotKey(day, hour);
+                        const users = unavailability[key] || [];
+                        if (users.length === 0) available++;
+                    });
+                });
+                return available;
+            };
+
+            if (loading) {
+                return <div className="container">Loading...</div>;
+            }
+
+            return (
+                <div className="container">
+                    <h1>When Can't Meet</h1>
+                    <p className="subtitle">Mark when you're UNAVAILABLE - Everything is available by default</p>
+
+                    {!currentUser ? (
+                        <div className="name-input-section">
+                            <div className="input-group">
+                                <input
+                                    type="text"
+                                    placeholder="Enter your name"
+                                    value={nameInput}
+                                    onChange={(e) => setNameInput(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleSignIn()}
+                                />
+                                <button onClick={handleSignIn} disabled={!nameInput.trim()}>
+                                    Sign In
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="name-input-section">
+                                <div className="current-user">
+                                    Signed in as: <strong>{currentUser}</strong>
+                                </div>
+                                <button onClick={() => setCurrentUser('')} style={{marginTop: '10px', background: '#666'}}>
+                                    Sign Out
+                                </button>
+                            </div>
+
+                            <div className="instructions">
+                                <h3>How to use:</h3>
+                                <p>Click and drag to mark when you're UNAVAILABLE. All times are available by default. The numbers show how many people are unavailable for each time slot.</p>
+                            </div>
+                        </>
+                    )}
+
+                    <div className="availability-header">
+                        <div className="availability-count">
+                            Group Availability: {getAvailableSlots()}/{getTotalAvailableSlots()} slots where everyone is available
+                        </div>
+                        <div className="legend">
+                            <div className="legend-item">
+                                <div className="legend-box" style={{background: 'white'}}></div>
+                                <span>Available</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-box" style={{background: '#ffebee'}}></div>
+                                <span>You're unavailable</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-box" style={{background: '#e3f2fd'}}></div>
+                                <span>Others unavailable</span>
+                            </div>
+                            <div className="legend-item">
+                                <div className="legend-box" style={{background: '#f3e5f5'}}></div>
+                                <span>You & others</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="calendar-container">
+                        <div className="calendar">
+                            <div className="calendar-header"></div>
+                            {DAYS.map(day => (
+                                <div key={day} className="calendar-header">{day}</div>
+                            ))}
+
+                            {HOURS.map(hour => (
+                                <React.Fragment key={hour}>
+                                    <div className="time-label">{hour}</div>
+                                    {DAYS.map(day => {
+                                        const count = getSlotCount(day, hour);
+                                        return (
+                                            <div
+                                                key={`${day}-${hour}`}
+                                                className={getSlotClass(day, hour)}
+                                                onMouseDown={() => handleMouseDown(day, hour)}
+                                                onMouseEnter={() => handleMouseEnter(day, hour)}
+                                            >
+                                                {count > 0 && <span className="slot-count">{count}</span>}
+                                            </div>
+                                        );
+                                    })}
+                                </React.Fragment>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="participants-section">
+                        <h3>Participants ({getAllParticipants().length})</h3>
+                        <div className="participants-list">
+                            {getAllParticipants().length === 0 ? (
+                                <p style={{color: '#666'}}>No participants yet. Sign in and mark your unavailability!</p>
+                            ) : (
+                                getAllParticipants().map(participant => (
+                                    <div key={participant} className="participant-badge">
+                                        {participant}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
